@@ -124,7 +124,7 @@ export default function Home() {
       <div style={{ maxWidth: '400px', margin: '0 auto', padding: '16px' }}>
         {/* 헤더 */}
         <header style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '14px 16px', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', marginBottom: '8px' }}>
-          <span style={{ fontSize: '20px' }}>🏪</span>
+          <img src="/images/logo.png" alt="로고" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
           <h1 style={{ flex: 1, textAlign: 'center', fontSize: '17px', fontWeight: 900, color: '#2c3e50', margin: 0 }}>
             앤드마켓 <span style={{ color: '#e67e22' }}>공동구매</span> 주문내역 조회
           </h1>
