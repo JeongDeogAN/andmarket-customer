@@ -10,7 +10,7 @@ export const metadata = {
     siteName: '앤드마켓 andMarket',
     images: [
       {
-        url: '/images/og-banner.png',
+        url: 'https://andmarket-customer.vercel.app/images/og-banner.png',
         width: 800,
         height: 400,
         alt: '앤드마켓 로고',
@@ -29,14 +29,6 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <meta property="og:image" content="/images/og-banner.png" />
-        <meta property="og:image:width" content="800" />
-        <meta property="og:image:height" content="400" />
-        <meta property="og:title" content="앤드마켓 공동구매 주문내역 조회" />
-        <meta property="og:description" content="매주 수요일, 토요일은 주문 상품 매장 입고일" />
-        <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="/images/og-banner.png" />
       </head>
       <body>
         {children}
