@@ -121,7 +121,7 @@ export default function Home() {
         opacity: toastShow ? 1 : 0, transition: 'all 0.2s', zIndex: 9999, pointerEvents: 'none'
       }}>{toastMsg}</div>
 
-      <div style={{ maxWidth: '400px', margin: '0 auto', padding: '16px' }}>
+      <div style={{ maxWidth: '100%', margin: '0 auto', padding: '10px' }}>
         {/* 헤더 */}
         <header style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '14px 16px', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', marginBottom: '8px' }}>
           <img src="/images/logo.png" alt="로고" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
@@ -138,20 +138,20 @@ export default function Home() {
         </div>
 
         {/* 검색창 */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '10px 12px', marginBottom: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ background: 'white', borderRadius: '16px', padding: '8px 10px', marginBottom: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', gap: '6px', alignItems: 'center', overflow: 'hidden' }}>
           <input
             type="text"
             value={keyword}
             onChange={function(e) { setKeyword(e.target.value); }}
             onKeyDown={function(e) { if (e.key === 'Enter') doSearch(); }}
             placeholder="닉네임 또는 숫자 4자리"
-            style={{ flex: 1, border: '1.5px solid #dee2e6', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }}
+            style={{ flex: 1, minWidth: 0, border: '1.5px solid #dee2e6', borderRadius: '10px', padding: '9px 10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }}
           />
           <button
             onClick={doSearch}
             disabled={loading}
-            style={{ flexShrink: 0, background: '#e67e22', color: 'white', border: 'none', borderRadius: '10px', padding: '9px 18px', fontSize: '14px', fontWeight: 800, fontFamily: 'inherit', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.5 : 1 }}>
-            {loading ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <Search style={{ width: 16, height: 16 }} />}
+            style={{ flexShrink: 0, background: '#e67e22', color: 'white', border: 'none', borderRadius: '10px', width: '44px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.5 : 1 }}>
+            {loading ? <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} /> : <Search style={{ width: 18, height: 18 }} />}
           </button>
         </div>
 
