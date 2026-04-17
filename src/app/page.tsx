@@ -121,7 +121,7 @@ export default function Home() {
         opacity: toastShow ? 1 : 0, transition: 'all 0.2s', zIndex: 9999, pointerEvents: 'none'
       }}>{toastMsg}</div>
 
-      <div style={{ maxWidth: '100%', margin: '0 auto', padding: '10px' }}>
+     <div style={{ maxWidth: '100%', margin: '0 auto', padding: '10px', width: '100%' }}>
         {/* 헤더 */}
         <header style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '14px 16px', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', marginBottom: '8px' }}>
           <img src="/images/logo.png" alt="로고" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
@@ -132,8 +132,8 @@ export default function Home() {
 
         {/* 안내 배너 */}
         <div style={{ background: 'linear-gradient(to right, #fff8f0, #fff3e0)', borderRadius: '12px', padding: '12px', marginBottom: '8px', border: '1px solid #ffe0b2' }}>
-          <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#e67e22', textAlign: 'center', margin: 0 }}>
-            📢 <b>매주 (수·토)요일</b>은 앤드마켓 "상품입고 되는날"
+          <p style={{ fontSize: '14px', fontWeight: 900, fontStyle: 'italic', fontFamily: '"Brush Script MT", "Segoe Script", "Comic Sans MS", cursive', color: '#c0392b', textAlign: 'center', margin: 0, letterSpacing: '1px' }}>
+            📢 매주 수요일, 토요일은 주문 상품 매장 입고일
           </p>
         </div>
 
@@ -195,7 +195,7 @@ export default function Home() {
                   픽업 가능 상품 ({pickupKeys.length}종)
                 </div>
                 {pickupKeys.map(function(k) {
-                  return <ProductGroup key={k} prodName={k} items={groups[k]} isPickup={true} defaultOpen={true} />;
+                  return <ProductGroup key={k} prodName={k} items={groups[k]} isPickup={true} defaultOpen={false} />;
                 })}
               </div>
             )}
@@ -204,7 +204,7 @@ export default function Home() {
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 900, color: '#555', padding: '4px 6px', marginBottom: '6px', marginTop: pickupKeys.length > 0 ? '10px' : '0', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#aaa', flexShrink: 0 }}></span>
-                  픽업 준비중 상품 ({normalKeys.length}종)
+                  매장 입고 예정 상품 ({normalKeys.length}종)
                 </div>
                 {normalKeys.map(function(k) {
                   return <ProductGroup key={k} prodName={k} items={groups[k]} isPickup={false} defaultOpen={false} />;
