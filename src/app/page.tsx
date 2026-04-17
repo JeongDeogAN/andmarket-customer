@@ -121,7 +121,7 @@ export default function Home() {
         opacity: toastShow ? 1 : 0, transition: 'all 0.2s', zIndex: 9999, pointerEvents: 'none'
       }}>{toastMsg}</div>
 
-     <div style={{ maxWidth: '100%', margin: '0 auto', padding: '10px', width: '100%' }}>
+      <div style={{ maxWidth: '480px', margin: '0 auto', padding: '10px' }}>
         {/* 헤더 */}
         <header style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '14px 16px', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', marginBottom: '8px' }}>
           <img src="/images/logo.png" alt="로고" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
