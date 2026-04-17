@@ -131,11 +131,9 @@ export default function Home() {
         </header>
 
         {/* 안내 배너 */}
-        <div style={{ background: 'linear-gradient(to right, #fff8f0, #fff3e0)', borderRadius: '12px', padding: '12px', marginBottom: '8px', border: '1px solid #ffe0b2' }}>
-          <p style={{ fontSize: '14px', fontWeight: 900, fontStyle: 'italic', fontFamily: '"Brush Script MT", "Segoe Script", "Comic Sans MS", cursive', color: '#c0392b', textAlign: 'center', margin: 0, letterSpacing: '1px' }}>
+          <p style={{ fontSize: '14px', fontWeight: 600, fontFamily: '"Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif', color: '#c0392b', textAlign: 'center', margin: 0, letterSpacing: '2px' }}>
             📢 매주 수요일, 토요일은 주문 상품 매장 입고일
           </p>
-        </div>
 
         {/* 검색창 */}
         <div style={{ background: 'white', borderRadius: '16px', padding: '8px 10px', marginBottom: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', gap: '6px', alignItems: 'center', overflow: 'hidden' }}>
