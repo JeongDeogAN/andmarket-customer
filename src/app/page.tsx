@@ -190,8 +190,8 @@ export default function Home() {
             {/* 픽업가능 섹션 */}
             {pickupKeys.length > 0 && (
               <div>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: '#27ae60', padding: '6px 8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '2px solid #27ae60', paddingBottom: '4px' }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#27ae60', flexShrink: 0 }}></span>
+                <div style={{ fontSize: '15px', fontWeight: 900, color: '#c0392b', padding: '6px 8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '2px solid #c0392b', paddingBottom: '4px' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#c0392b', flexShrink: 0 }}></span>
                   픽업 가능 상품 ({pickupKeys.length}종)
                 </div>
                 {pickupKeys.map(function(k) {
@@ -202,8 +202,8 @@ export default function Home() {
             {/* 일반 섹션 */}
             {normalKeys.length > 0 && (
               <div>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: '#e67e22', padding: '6px 8px', marginBottom: '8px', marginTop: pickupKeys.length > 0 ? '14px' : '0', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '2px solid #e67e22', paddingBottom: '4px' }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#e67e22', flexShrink: 0 }}></span>
+                <div style={{ fontSize: '15px', fontWeight: 900, color: '#c0392b', padding: '6px 8px', marginBottom: '8px', marginTop: pickupKeys.length > 0 ? '14px' : '0', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '2px solid #c0392b', paddingBottom: '4px' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#c0392b', flexShrink: 0 }}></span>
                   매장 입고 예정 상품 ({normalKeys.length}종)
                 </div>
                 {normalKeys.map(function(k) {
