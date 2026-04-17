@@ -133,7 +133,7 @@ export default function Home() {
         {/* 안내 배너 */}
         <div style={{ background: 'linear-gradient(to right, #fff8f0, #fff3e0)', borderRadius: '12px', padding: '12px', marginBottom: '8px', border: '1px solid #ffe0b2' }}>
           <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#e67e22', textAlign: 'center', margin: 0 }}>
-            📢 <b>수·토·요일</b>은 앤드마켓 픽업 날입니다.
+            📢 <b>매주 (수·토)요일</b>은 앤드마켓 "상품입고 되는날"
           </p>
         </div>
 
