@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 
 interface OrderItem {
@@ -19,7 +19,12 @@ interface OrderItem {
   canPickup: boolean;
 }
 
-type TabKey = 'active' | 'done' | 'cancel' | 'all';
+interface InboundItem {
+  name: string;
+  inDate: string;
+}
+
+type TabKey = 'active' | 'done' | 'cancel';
 
 function getStatusInfo(item: OrderItem) {
   if (item.isCanceled) return { text: '취소됨', color: '#e74c3c', bg: '#fff9f9' };
@@ -51,45 +56,47 @@ export default function Home() {
   const [searched, setSearched] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastShow, setToastShow] = useState(false);
+  const [inboundItems, setInboundItems] = useState<InboundItem[]>([]);
+  const [inboundLoaded, setInboundLoaded] = useState(false);
+  const [inboundDate, setInboundDate] = useState('');
+  const [placeholderVisible, setPlaceholderVisible] = useState(true);
+
+  const inboundRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(function () {
+    fetch('/api/today-inbound')
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && json.data) {
+          setInboundItems(json.data);
+          if (json.data.length > 0) setInboundDate(json.data[0].inDate || '');
+        }
+      })
+      .finally(() => setInboundLoaded(true));
+  }, []);
 
   const counts = useMemo(() => ({
-    active: allData.filter(function(d) { return !d.isCanceled && d.status !== 'O'; }).length,
-    done: allData.filter(function(d) { return !d.isCanceled && d.status === 'O'; }).length,
-    cancel: allData.filter(function(d) { return d.isCanceled; }).length,
-    all: allData.length,
+    active: allData.filter(d => !d.isCanceled && d.status !== 'O').length,
+    done: allData.filter(d => !d.isCanceled && d.status === 'O').length,
+    cancel: allData.filter(d => d.isCanceled).length,
   }), [allData]);
 
-  const filtered = useMemo(function() {
-    if (activeTab === 'active') return allData.filter(function(d) { return !d.isCanceled && d.status !== 'O'; });
-    if (activeTab === 'done') return allData.filter(function(d) { return !d.isCanceled && d.status === 'O'; });
-    if (activeTab === 'cancel') return allData.filter(function(d) { return d.isCanceled; });
+  const filtered = useMemo(function () {
+    if (activeTab === 'active') return allData.filter(d => !d.isCanceled && d.status !== 'O');
+    if (activeTab === 'done') return allData.filter(d => !d.isCanceled && d.status === 'O');
+    if (activeTab === 'cancel') return allData.filter(d => d.isCanceled);
     return allData;
   }, [allData, activeTab]);
-
-  const groups = useMemo(function() {
-    const g: Record<string, OrderItem[]> = {};
-    filtered.forEach(function(i) {
-      if (!g[i.prodName]) g[i.prodName] = [];
-      g[i.prodName].push(i);
-    });
-    return g;
-  }, [filtered]);
-
-  const pickupKeys = Object.keys(groups).filter(function(k) {
-    return groups[k].some(function(d) { return d.canPickup && !d.isCanceled && d.status !== 'O'; });
-  });
-  const normalKeys = Object.keys(groups).filter(function(k) {
-    return !pickupKeys.includes(k);
-  });
 
   function showToast(msg: string) {
     setToastMsg(msg);
     setToastShow(true);
-    setTimeout(function() { setToastShow(false); }, 2500);
+    setTimeout(function () { setToastShow(false); }, 2500);
   }
 
   async function doSearch() {
-    if (!keyword.trim()) { showToast('닉네임 또는 숫자 4자리를 입력해 주세요.'); return; }
+    if (!keyword.trim()) { showToast('⚠️ 닉네임 또는 숫자 4자리를 입력해 주세요.'); return; }
     setLoading(true);
     setSearched(true);
     setActiveTab('active');
@@ -103,11 +110,14 @@ export default function Home() {
   }
 
   const tabList: { key: TabKey; label: string; count: number }[] = [
-    { key: 'active', label: '진행중', count: counts.active },
+    { key: 'active', label: '전체상품', count: counts.active },
     { key: 'done', label: '픽업완료', count: counts.done },
     { key: 'cancel', label: '취소', count: counts.cancel },
-    { key: 'all', label: '전체', count: counts.all },
   ];
+
+  const inboundDateDisp = inboundDate
+    ? inboundDate.substring(5).replace('-', '/') + ' 기준'
+    : '';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f4f7f9' }}>
@@ -121,47 +131,79 @@ export default function Home() {
         opacity: toastShow ? 1 : 0, transition: 'all 0.2s', zIndex: 9999, pointerEvents: 'none'
       }}>{toastMsg}</div>
 
-      <div style={{ maxWidth: '480px', margin: '0 auto', padding: '10px' }}>
-        {/* 헤더 */}
-        <header style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '14px 16px', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', marginBottom: '8px' }}>
-          <img src="/images/logo.png" alt="로고" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
-          <h1 style={{ flex: 1, textAlign: 'center', fontSize: '17px', fontWeight: 900, color: '#2c3e50', margin: 0 }}>
-            앤드마켓 <span style={{ color: '#e67e22' }}>공동구매</span> 주문내역 조회
-          </h1>
-        </header>
+      <div style={{ maxWidth: '400px', margin: '0 auto', padding: '16px' }}>
 
-        {/* 안내 배너 */}
-        <div style={{ background: 'linear-gradient(to right, #fff8f0, #fff3e0)', borderRadius: '12px', padding: '12px', marginBottom: '8px', border: '1px solid #ffe0b2' }}>
-          <p style={{ fontSize: '13px', fontWeight: 700, fontStyle: 'italic', fontFamily: '"Segoe Script", "Comic Sans MS", cursive', color: '#c0392b', textAlign: 'center', margin: 0, letterSpacing: '0.5px' }}>
-            📢 매주 수요일, 토요일은 주문 상품 매장 입고일
-          </p>
+        {/* 최상단 배너 */}
+        <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+          <img src="/images/Top-banner.jpg" alt="앤드마켓 배너" style={{ display: 'block', width: '100%', height: 'auto' }} />
         </div>
 
         {/* 검색창 */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '8px 10px', marginBottom: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', gap: '6px', alignItems: 'center', overflow: 'hidden' }}>
-          <input
-            type="text"
-            value={keyword}
-            onChange={function(e) { setKeyword(e.target.value); }}
-            onKeyDown={function(e) { if (e.key === 'Enter') doSearch(); }}
-            placeholder="닉네임 또는 숫자 4자리"
-            style={{ flex: 1, minWidth: 0, border: '1.5px solid #dee2e6', borderRadius: '10px', padding: '9px 10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }}
-          />
+        <div style={{ background: 'white', borderRadius: '16px', padding: '14px 12px', marginBottom: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
+            {placeholderVisible && (
+              <div style={{ position: 'absolute', top: '50%', left: '2px', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: '13px', fontWeight: 700, color: '#bbb', lineHeight: 1.5 }}>
+                닉네임 또는 숫자 4자리 입력하여<br />주문한 상품을 조회하세요
+              </div>
+            )}
+            <input
+              type="text"
+              value={keyword}
+              onChange={function (e) {
+                setKeyword(e.target.value);
+                setPlaceholderVisible(e.target.value === '');
+              }}
+              onFocus={function () { setPlaceholderVisible(false); }}
+              onBlur={function () { if (!keyword) setPlaceholderVisible(true); }}
+              onKeyDown={function (e) { if (e.key === 'Enter') doSearch(); }}
+              style={{ border: 'none', outline: 'none', fontSize: '14px', fontFamily: 'inherit', padding: '18px 2px 4px', color: '#2c3e50', background: 'transparent', width: '100%' }}
+            />
+          </div>
           <button
             onClick={doSearch}
             disabled={loading}
-            style={{ flexShrink: 0, background: '#e67e22', color: 'white', border: 'none', borderRadius: '10px', width: '44px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.5 : 1 }}>
-            {loading ? <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} /> : <Search style={{ width: 18, height: 18 }} />}
+            style={{ flexShrink: 0, background: '#e67e22', color: 'white', border: 'none', borderRadius: '10px', padding: '9px 18px', fontSize: '14px', fontWeight: 800, fontFamily: 'inherit', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.5 : 1 }}>
+            {loading ? <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} /> : '조회'}
           </button>
         </div>
+
+        {/* 입고 상품 카드 (조회 전) */}
+        {!searched && inboundLoaded && (
+          <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', background: '#fffaf3', border: '1.5px solid #f0d080', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+            <div style={{ background: '#e67e22', padding: '7px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>
+                <span style={{ color: '#ffe58a' }}>입고 상품 알림</span>
+              </span>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>{inboundDateDisp}</span>
+            </div>
+            {inboundItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '10px 14px', fontSize: '12px', color: '#c09050', fontWeight: 700 }}>입고 상품이 없습니다.</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  {inboundItems.map(function (p, i) {
+                    return (
+                      <tr key={i}>
+                        <td style={{ width: '28px', padding: '6px 4px 6px 14px' }}>
+                          <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: '#fef3d8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: '#b86000' }}>{i + 1}</div>
+                        </td>
+                        <td style={{ fontSize: '12px', fontWeight: 800, color: '#3a2000', padding: '6px 14px 6px 4px', borderBottom: i < inboundItems.length - 1 ? '1px solid #f5e8c8' : 'none', lineHeight: 1.35 }}>{p.name}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
 
         {/* 탭 */}
         {searched && allData.length > 0 && (
           <div style={{ display: 'flex', background: 'white', borderRadius: '12px', padding: '5px', marginBottom: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', gap: '3px' }}>
-            {tabList.map(function(t) {
+            {tabList.map(function (t) {
               const isActive = activeTab === t.key;
               return (
-                <button key={t.key} onClick={function() { setActiveTab(t.key); }}
+                <button key={t.key} onClick={function () { setActiveTab(t.key); }}
                   style={{ flex: 1, border: 'none', borderRadius: '9px', padding: '7px 4px', fontSize: '12px', fontWeight: isActive ? 900 : 700, fontFamily: 'inherit', cursor: 'pointer', color: isActive ? 'white' : '#999', backgroundColor: isActive ? '#e67e22' : 'transparent', whiteSpace: 'nowrap' }}>
                   {t.label}
                   <span style={{ display: 'inline-block', borderRadius: '8px', padding: '0 5px', fontSize: '10px', fontWeight: 900, marginLeft: '2px', backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)' }}>{t.count}</span>
@@ -185,37 +227,38 @@ export default function Home() {
         )}
 
         {/* 결과 목록 */}
-        {!loading && filtered.length > 0 && (
-          <div>
-            {/* 픽업가능 섹션 */}
-            {pickupKeys.length > 0 && (
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: '#c0392b', padding: '6px 8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '2px solid #c0392b', paddingBottom: '4px' }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#c0392b', flexShrink: 0 }}></span>
-                  픽업 가능 상품 ({pickupKeys.length}종)
-                </div>
-                {pickupKeys.map(function(k) {
-                  return <ProductGroup key={k} prodName={k} items={groups[k]} isPickup={true} defaultOpen={false} />;
+        {!loading && searched && filtered.length > 0 && (
+          <ResultList filtered={filtered} activeTab={activeTab} />
+        )}
+
+        {/* 조회 후 입고 상품 카드 */}
+        {searched && inboundLoaded && inboundItems.length > 0 && (
+          <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '8px', marginBottom: '8px', background: '#fffaf3', border: '1.5px solid #f0d080', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+            <div style={{ background: '#e67e22', padding: '7px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>
+                <span style={{ color: '#ffe58a' }}>입고 상품 알림</span>
+              </span>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>{inboundDateDisp}</span>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <tbody>
+                {inboundItems.map(function (p, i) {
+                  return (
+                    <tr key={i}>
+                      <td style={{ width: '28px', padding: '6px 4px 6px 14px' }}>
+                        <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: '#fef3d8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: '#b86000' }}>{i + 1}</div>
+                      </td>
+                      <td style={{ fontSize: '12px', fontWeight: 800, color: '#3a2000', padding: '6px 14px 6px 4px', borderBottom: i < inboundItems.length - 1 ? '1px solid #f5e8c8' : 'none', lineHeight: 1.35 }}>{p.name}</td>
+                    </tr>
+                  );
                 })}
-              </div>
-            )}
-            {/* 일반 섹션 */}
-            {normalKeys.length > 0 && (
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: '#c0392b', padding: '6px 8px', marginBottom: '8px', marginTop: pickupKeys.length > 0 ? '14px' : '0', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '2px solid #c0392b', paddingBottom: '4px' }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#c0392b', flexShrink: 0 }}></span>
-                  매장 입고 예정 상품 ({normalKeys.length}종)
-                </div>
-                {normalKeys.map(function(k) {
-                  return <ProductGroup key={k} prodName={k} items={groups[k]} isPickup={false} defaultOpen={false} />;
-                })}
-              </div>
-            )}
+              </tbody>
+            </table>
           </div>
         )}
 
         {/* 초기 화면 */}
-        {!searched && !loading && (
+        {!searched && !loading && !inboundLoaded && (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <div style={{ fontSize: '40px', marginBottom: '12px' }}>📦</div>
             <p style={{ color: '#aaa', fontSize: '13px' }}>닉네임 또는 숫자 4자리를 입력하여<br />주문내역을 조회하세요.</p>
@@ -232,24 +275,81 @@ export default function Home() {
   );
 }
 
+/* 결과 목록 컴포넌트 */
+function ResultList({ filtered, activeTab }: { filtered: OrderItem[]; activeTab: string }) {
+  const sections = buildSections(filtered, activeTab);
+  const groups: { sec: typeof sections[0]; keys: string[]; groupMap: Record<string, OrderItem[]> }[] = [];
+
+  sections.forEach(sec => {
+    if (sec.items.length === 0) return;
+    const groupMap: Record<string, OrderItem[]> = {};
+    sec.items.forEach(item => {
+      if (!groupMap[item.prodName]) groupMap[item.prodName] = [];
+      groupMap[item.prodName].push(item);
+    });
+    const keys = Object.keys(groupMap)
+      .sort((a, b) => (groupMap[b][0].resDate || '').localeCompare(groupMap[a][0].resDate || ''));
+    groups.push({ sec, keys, groupMap });
+  });
+
+  return (
+    <div>
+      {groups.map(function ({ sec, keys, groupMap }, si) {
+        return (
+          <div key={si}>
+            <div style={{ fontSize: '14px', fontWeight: 900, color: '#444', padding: '4px 6px', marginBottom: '6px', marginTop: si > 0 ? '10px' : '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: sec.dotColor, flexShrink: 0, display: 'inline-block' }}></span>
+              {sec.title} ({keys.length}종)
+            </div>
+            {keys.map(function (prodName) {
+              return (
+                <ProductGroup key={prodName} prodName={prodName} items={groupMap[prodName]} isPickup={sec.isPickup || false} />
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function buildSections(filtered: OrderItem[], activeTab: string) {
+  if (activeTab === 'done') {
+    return [{ title: '픽업 완료 상품', dotColor: '#e67e22', isPickup: false, items: filtered }];
+  }
+  if (activeTab === 'cancel') {
+    return [{ title: '취소 상품', dotColor: '#e74c3c', isPickup: false, items: filtered }];
+  }
+  const pickupItems = filtered.filter(d => d.canPickup && !d.isCanceled && d.status !== 'O');
+  const normalItems = filtered.filter(d => !d.canPickup && !d.isCanceled && d.status !== 'O');
+  const doneItems   = filtered.filter(d => !d.isCanceled && d.status === 'O');
+  const cancelItems = filtered.filter(d => d.isCanceled);
+  return [
+    { title: '픽업 가능 상품',  dotColor: '#27ae60', isPickup: true,  items: pickupItems },
+    { title: '픽업 준비중 상품', dotColor: '#aaa',    isPickup: false, items: normalItems },
+    { title: '픽업 완료 상품',  dotColor: '#e67e22', isPickup: false, items: doneItems   },
+    { title: '취소 상품',       dotColor: '#e74c3c', isPickup: false, items: cancelItems },
+  ];
+}
+
 /* 상품 그룹 컴포넌트 */
-function ProductGroup(props: { prodName: string; items: OrderItem[]; isPickup: boolean; defaultOpen: boolean }) {
-  const [open, setOpen] = useState(props.defaultOpen);
-  const totalQty = props.items.reduce(function(s, d) { return s + d.qty; }, 0);
-  const totalAmt = props.items.reduce(function(s, d) { return s + d.total; }, 0);
+function ProductGroup({ prodName, items, isPickup }: { prodName: string; items: OrderItem[]; isPickup: boolean }) {
+  const [open, setOpen] = useState(false);
+  const totalQty = items.reduce(function (s, d) { return s + d.qty; }, 0);
+  const totalAmt = items.reduce(function (s, d) { return s + d.total; }, 0);
 
   return (
     <div style={{ marginBottom: '6px' }}>
       <div
-        onClick={function() { setOpen(!open); }}
-        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: props.isPickup ? '#eafaf1' : 'white', borderRadius: '12px', padding: '9px 12px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', borderLeft: props.isPickup ? '4px solid #27ae60' : '4px solid #e67e22', userSelect: 'none' }}
+        onClick={function () { setOpen(!open); }}
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: isPickup ? '#eafaf1' : 'white', borderRadius: '12px', padding: '9px 12px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', borderLeft: isPickup ? '4px solid #27ae60' : '4px solid #e67e22', userSelect: 'none' }}
       >
-        <span style={{ flex: 1, fontSize: '13px', fontWeight: 900, color: props.isPickup ? '#1a5c38' : '#2c3e50' }}>{props.prodName}</span>
-        <span style={{ fontSize: '11px', color: props.isPickup ? '#27ae60' : '#aaa', fontWeight: 700, whiteSpace: 'nowrap' }}>{props.items.length}건 · {totalQty}개 · {totalAmt.toLocaleString()}원</span>
-        <span style={{ fontSize: '11px', color: '#e74c3c', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>▼</span>
+        <span style={{ flex: 1, fontSize: '13px', fontWeight: 900, color: isPickup ? '#1a5c38' : '#2c3e50' }}>{prodName}</span>
+        <span style={{ fontSize: '11px', color: isPickup ? '#27ae60' : '#aaa', fontWeight: 700, whiteSpace: 'nowrap' }}>{items.length}건 · {totalQty}개 · {totalAmt.toLocaleString()}원</span>
+        <span style={{ fontSize: '11px', color: isPickup ? '#27ae60' : '#e74c3c', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>▼</span>
       </div>
-      <div style={{ display: open ? 'block' : 'none', background: props.isPickup ? '#f4fdf7' : 'transparent', borderRadius: '0 0 10px 10px', padding: open ? '4px 4px 2px' : '0' }}>
-        {props.items.map(function(item, idx) {
+      <div style={{ display: open ? 'block' : 'none', background: isPickup ? '#f4fdf7' : 'transparent', borderRadius: '0 0 10px 10px', padding: open ? '4px 4px 2px' : '0' }}>
+        {items.map(function (item, idx) {
           const si = getStatusInfo(item);
           const dl = getDayLabel(item);
           return (
@@ -265,7 +365,7 @@ function ProductGroup(props: { prodName: string; items: OrderItem[]; isPickup: b
               </div>
               <div style={{ fontSize: '11px', fontWeight: 900, color: '#aaa', marginBottom: '3px', paddingRight: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.customer}</div>
               <div style={{ fontSize: '11px', color: '#7f8c8d', lineHeight: 1.6, fontWeight: 700 }}>
-                수량: <b>{item.qty}개</b> &nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b> &nbsp;|&nbsp;합계: <b style={{ color: '#e67e22' }}>{fmt(item.total)}원</b>
+                수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>&nbsp;|&nbsp;합계: <b style={{ color: '#e67e22' }}>{fmt(item.total)}원</b>
               </div>
               {item.isCanceled && <div style={{ marginTop: '4px', fontSize: '11px', color: '#e74c3c', fontWeight: 800 }}>❌ 취소된 주문입니다.</div>}
             </div>

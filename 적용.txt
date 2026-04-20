@@ -1,0 +1,17 @@
+1200x630 , 1.91: 1 OG 배너 이미지  .PNG
+
+
+
+andmarket-customer/public/images/og-banner.png
+
+
+cd andmarket-customer
+git add .
+git commit -m "OG 배너 이미지 교체"
+git push origin main
+
+
+카카오톡 캐시 삭제
+https://developers.kakao.com/tool/clear/og
+
+https://andmarket-customer.vercel.app

@@ -1,10 +1,10 @@
 import React from 'react';
 
 export const metadata = {
-  title: '고객 주문내역 조회',
+  title: '내 주문내역 조회하기',
   description: '앤드마켓 공동구매 주문내역을 조회하세요. 닉네임 또는 숫자 4자리를 입력하여 조회합니다.',
   openGraph: {
-    title: '고객 주문내역 조회',
+    title: '내 주문내역 조회하기',
     description: '매주 수요일, 토요일은 주문 상품 매장 입고일',
     url: 'https://andmarket-customer.vercel.app',
     siteName: '앤드마켓 andMarket',
