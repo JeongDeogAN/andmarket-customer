@@ -28,7 +28,7 @@ type TabKey = 'active' | 'done' | 'cancel' | 'pickup-time';
 
 function getStatusInfo(item: OrderItem) {
   if (item.isCanceled) return { text: '취소됨', color: '#e74c3c', bg: '#fff9f9' };
-  if (item.status === 'O') return { text: '픽업완료', color: '#e67e22', bg: '' };
+  if (item.status === 'O') return { text: '픽업완료', color: '#fa7703', bg: '' };
   return { text: '준비중', color: '#7f8c8d', bg: '' };
 }
 
@@ -165,7 +165,7 @@ export default function Home() {
               const isActive = activeTab === t.key;
               return (
                 <button key={t.key} onClick={function () { setActiveTab(t.key); }}
-                  style={{ flex: 1, border: 'none', borderRadius: '9px', padding: '8px 4px', fontSize: '14px', fontWeight: isActive ? 900 : 700, fontFamily: 'inherit', cursor: 'pointer', color: isActive ? 'white' : '#999', backgroundColor: isActive ? '#e67e22' : 'transparent', whiteSpace: 'nowrap' }}>
+                  style={{ flex: 1, border: 'none', borderRadius: '9px', padding: '8px 4px', fontSize: '14px', fontWeight: isActive ? 900 : 700, fontFamily: 'inherit', cursor: 'pointer', color: isActive ? 'white' : '#999', backgroundColor: isActive ? '#fa7703' : 'transparent', whiteSpace: 'nowrap' }}>
                   {t.label}
                   {t.showBadge && (
                     <span style={{ display: 'inline-block', borderRadius: '8px', padding: '0 5px', fontSize: '10px', fontWeight: 900, marginLeft: '2px', backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)' }}>{t.count}</span>
@@ -179,8 +179,8 @@ export default function Home() {
         {/* 로딩 */}
         {loading && (
           <div style={{ textAlign: 'center', padding: '40px' }}>
-            <Loader2 style={{ width: 24, height: 24, color: '#e67e22', animation: 'spin 1s linear infinite' }} />
-            <div style={{ color: '#e67e22', fontWeight: 'bold', fontSize: '14px', marginTop: '8px' }}>조회 중...</div>
+            <Loader2 style={{ width: 24, height: 24, color: '#fa7703', animation: 'spin 1s linear infinite' }} />
+            <div style={{ color: '#fa7703', fontWeight: 'bold', fontSize: '14px', marginTop: '8px' }}>조회 중...</div>
           </div>
         )}
 
@@ -230,13 +230,13 @@ export default function Home() {
 /* 입고 상품 카드 컴포넌트 */
 function InboundCard({ items, dateDisp }: { items: InboundItem[]; dateDisp: string }) {
   return (
-    <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', background: '#eaf4ee', border: '1.5px solid #2e5240', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
-      <div style={{ background: '#2e5240', padding: '7px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', background: '#fff4e6', border: '1.5px solid #fa7703', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+      <div style={{ background: '#d96800', padding: '7px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>입고 상품 알림</span>
         <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>{dateDisp}</span>
       </div>
       {items.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '10px 14px', fontSize: '12px', color: '#4a7c59', fontWeight: 700 }}>오늘 입고 상품이 없습니다.</div>
+        <div style={{ textAlign: 'center', padding: '10px 14px', fontSize: '12px', color: '#c07020', fontWeight: 700 }}>오늘 입고 상품이 없습니다.</div>
       ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
@@ -244,9 +244,9 @@ function InboundCard({ items, dateDisp }: { items: InboundItem[]; dateDisp: stri
               return (
                 <tr key={i}>
                   <td style={{ width: '28px', padding: '6px 4px 6px 14px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: '#b2dfc0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: '#2e5240' }}>{i + 1}</div>
+                    <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: '#fdd9aa', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: '#7a3800' }}>{i + 1}</div>
                   </td>
-                  <td style={{ fontSize: '12px', fontWeight: 700, color: '#2e5240', padding: '6px 14px 6px 4px', borderBottom: i < items.length - 1 ? '1px solid #c8e6d0' : 'none', lineHeight: 1.35 }}>{p.name}</td>
+                  <td style={{ fontSize: '12px', fontWeight: 700, color: '#7a3800', padding: '6px 14px 6px 4px', borderBottom: i < items.length - 1 ? '1px solid #fdd9aa' : 'none', lineHeight: 1.35 }}>{p.name}</td>
                 </tr>
               );
             })}
@@ -270,7 +270,7 @@ function PickupTimeView({ items }: { items: OrderItem[] }) {
   return (
     <div style={{ background: 'white', borderRadius: '14px', padding: '16px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: '8px' }}>
       <div style={{ fontSize: '14px', fontWeight: 900, color: '#444', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#e67e22', display: 'inline-block', flexShrink: 0 }}></span>
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#fa7703', display: 'inline-block', flexShrink: 0 }}></span>
         매장별 픽업 가능 시간
       </div>
       {pickupInfo.map(function (s, i) {
@@ -343,8 +343,8 @@ function buildSections(filtered: OrderItem[], activeTab: string) {
   const cancelItems = filtered.filter(d => d.isCanceled);
   return [
     { title: '픽업 가능 상품',   dotColor: '#27ae60', titleColor: '#1a5c38', isPickup: true,  items: pickupItems },
-    { title: '픽업 준비중 상품', dotColor: '#e67e22', titleColor: '#cf6d17', isPickup: false, items: normalItems },
-    { title: '픽업 완료 상품',   dotColor: '#e67e22', titleColor: '#444',    isPickup: false, items: doneItems   },
+    { title: '픽업 준비중 상품', dotColor: '#fa7703', titleColor: '#d96800', isPickup: false, items: normalItems },
+    { title: '픽업 완료 상품',   dotColor: '#fa7703', titleColor: '#444',    isPickup: false, items: doneItems   },
     { title: '취소 상품',        dotColor: '#e74c3c', titleColor: '#444',    isPickup: false, items: cancelItems },
   ];
 }
@@ -359,7 +359,7 @@ function ProductGroup({ prodName, items, isPickup }: { prodName: string; items: 
     <div style={{ marginBottom: '6px' }}>
       <div
         onClick={function () { setOpen(!open); }}
-        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: isPickup ? '#eafaf1' : 'white', borderRadius: '12px', padding: '9px 12px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', borderLeft: isPickup ? '4px solid #27ae60' : '4px solid #e67e22', userSelect: 'none' }}
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: isPickup ? '#eafaf1' : 'white', borderRadius: '12px', padding: '9px 12px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', borderLeft: isPickup ? '4px solid #27ae60' : '4px solid #fa7703', userSelect: 'none' }}
       >
         <span style={{ flex: 1, fontSize: '13px', fontWeight: 900, color: isPickup ? '#1a5c38' : '#2c3e50' }}>{prodName}</span>
         <span style={{ fontSize: '11px', color: isPickup ? '#27ae60' : '#aaa', fontWeight: 700, whiteSpace: 'nowrap' }}>{items.length}건 · {totalQty}개 · {totalAmt.toLocaleString()}원</span>
@@ -372,11 +372,11 @@ function ProductGroup({ prodName, items, isPickup }: { prodName: string; items: 
           const badgeBg = si.color === '#7f8c8d' ? '#f1f2f6' : si.color;
           const badgeFg = si.color === '#7f8c8d' ? '#636e72' : 'white';
           return (
-            <div key={idx} style={{ background: si.bg || 'white', padding: '9px 11px 9px 14px', borderRadius: '10px', marginBottom: '4px', borderLeft: '4px solid ' + (item.isCanceled ? '#e74c3c' : item.status === 'O' ? '#e67e22' : '#dcdde1'), position: 'relative', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div key={idx} style={{ background: si.bg || 'white', padding: '9px 11px 9px 14px', borderRadius: '10px', marginBottom: '4px', borderLeft: '4px solid ' + (item.isCanceled ? '#e74c3c' : item.status === 'O' ? '#fa7703' : '#dcdde1'), position: 'relative', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               <div style={{ position: 'absolute', top: '9px', right: '10px', textAlign: 'center' }}>
                 <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, backgroundColor: badgeBg, color: badgeFg }}>{si.text}</span>
                 {item.isCanceled && <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 800, color: '#e74c3c' }}>🗓 {item.cancelDate}</div>}
-                {!item.isCanceled && item.status === 'O' && <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 800, color: '#e67e22' }}>📦 {item.pickupDate}</div>}
+                {!item.isCanceled && item.status === 'O' && <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 800, color: '#fa7703' }}>📦 {item.pickupDate}</div>}
               </div>
               <div style={{ fontSize: '10px', color: '#bbb', marginBottom: '3px', fontWeight: 400 }}>
                 신청일 <b style={{ color: '#2c3e50' }}>{item.resDate}</b>&nbsp;|&nbsp;입고일 <b style={{ color: '#2c3e50' }}>{item.inDate || '-'}</b>
@@ -384,7 +384,7 @@ function ProductGroup({ prodName, items, isPickup }: { prodName: string; items: 
               </div>
               <div style={{ fontSize: '11px', fontWeight: 900, color: '#aaa', marginBottom: '3px', paddingRight: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.customer}</div>
               <div style={{ fontSize: '11px', color: '#7f8c8d', lineHeight: 1.6, fontWeight: 400 }}>
-                수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>&nbsp;|&nbsp;합계: <b style={{ color: '#e67e22' }}>{fmt(item.total)}원</b>
+                수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>&nbsp;|&nbsp;합계: <b style={{ color: '#fa7703' }}>{fmt(item.total)}원</b>
               </div>
               {item.isCanceled && <div style={{ marginTop: '4px', fontSize: '11px', color: '#e74c3c', fontWeight: 800 }}>❌ 취소된 주문입니다.</div>}
             </div>
