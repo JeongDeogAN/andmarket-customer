@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface OrderItem {
   resDate: string;
@@ -24,7 +24,7 @@ interface InboundItem {
   inDate: string;
 }
 
-type TabKey = 'active' | 'done' | 'cancel';
+type TabKey = 'active' | 'done' | 'cancel' | 'pickup-time';
 
 function getStatusInfo(item: OrderItem) {
   if (item.isCanceled) return { text: '취소됨', color: '#e74c3c', bg: '#fff9f9' };
@@ -59,10 +59,6 @@ export default function Home() {
   const [inboundItems, setInboundItems] = useState<InboundItem[]>([]);
   const [inboundLoaded, setInboundLoaded] = useState(false);
   const [inboundDate, setInboundDate] = useState('');
-  const [placeholderVisible, setPlaceholderVisible] = useState(true);
-
-  const inboundRef = useRef<HTMLDivElement>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(function () {
     fetch('/api/today-inbound')
@@ -83,7 +79,7 @@ export default function Home() {
   }), [allData]);
 
   const filtered = useMemo(function () {
-    if (activeTab === 'active') return allData.filter(d => !d.isCanceled && d.status !== 'O');
+    if (activeTab === 'active' || activeTab === 'pickup-time') return allData.filter(d => !d.isCanceled && d.status !== 'O');
     if (activeTab === 'done') return allData.filter(d => !d.isCanceled && d.status === 'O');
     if (activeTab === 'cancel') return allData.filter(d => d.isCanceled);
     return allData;
@@ -109,12 +105,6 @@ export default function Home() {
     finally { setLoading(false); }
   }
 
-  const tabList: { key: TabKey; label: string; count: number }[] = [
-    { key: 'active', label: '전체상품', count: counts.active },
-    { key: 'done', label: '픽업완료', count: counts.done },
-    { key: 'cancel', label: '취소', count: counts.cancel },
-  ];
-
   const inboundDateDisp = inboundDate
     ? inboundDate.substring(5).replace('-', '/') + ' 기준'
     : '';
@@ -139,74 +129,47 @@ export default function Home() {
         </div>
 
         {/* 검색창 */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '14px 12px', marginBottom: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
-            {placeholderVisible && (
-              <div style={{ position: 'absolute', top: '50%', left: '2px', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: '13px', fontWeight: 700, color: '#bbb', lineHeight: 1.5 }}>
-                닉네임 또는 숫자 4자리 입력하여<br />주문한 상품을 조회하세요
-              </div>
-            )}
-            <input
-              type="text"
-              value={keyword}
-              onChange={function (e) {
-                setKeyword(e.target.value);
-                setPlaceholderVisible(e.target.value === '');
-              }}
-              onFocus={function () { setPlaceholderVisible(false); }}
-              onBlur={function () { if (!keyword) setPlaceholderVisible(true); }}
-              onKeyDown={function (e) { if (e.key === 'Enter') doSearch(); }}
-              style={{ border: 'none', outline: 'none', fontSize: '14px', fontFamily: 'inherit', padding: '18px 2px 4px', color: '#2c3e50', background: 'transparent', width: '100%' }}
-            />
-          </div>
+        <div style={{ background: 'white', borderRadius: '16px', padding: '10px 12px', marginBottom: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+          <input
+            type="text"
+            value={keyword}
+            placeholder="주문조회, 닉네임 또는 숫자4자리"
+            onChange={function (e) { setKeyword(e.target.value); }}
+            onKeyDown={function (e) { if (e.key === 'Enter') doSearch(); }}
+            onFocus={function (e) { e.target.style.borderColor = '#e67e22'; }}
+            onBlur={function (e) { e.target.style.borderColor = '#dee2e6'; }}
+            style={{ flex: 1, border: '1.5px solid #dee2e6', borderRadius: '10px', padding: '10px 13px', fontSize: '14px', fontFamily: 'inherit', outline: 'none', minWidth: 0, color: '#2c3e50', transition: 'border-color 0.2s' }}
+          />
           <button
             onClick={doSearch}
             disabled={loading}
-            style={{ flexShrink: 0, background: '#e67e22', color: 'white', border: 'none', borderRadius: '10px', padding: '9px 18px', fontSize: '14px', fontWeight: 800, fontFamily: 'inherit', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.5 : 1 }}>
+            style={{ flexShrink: 0, background: '#e67e22', color: 'white', border: 'none', borderRadius: '10px', padding: '0 18px', fontSize: '14px', fontWeight: 800, fontFamily: 'inherit', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.5 : 1 }}>
             {loading ? <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} /> : '조회'}
           </button>
         </div>
 
         {/* 입고 상품 카드 (조회 전) */}
         {!searched && inboundLoaded && (
-          <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', background: '#fffaf3', border: '1.5px solid #f0d080', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <div style={{ background: '#e67e22', padding: '7px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>
-                <span style={{ color: '#ffe58a' }}>입고 상품 알림</span>
-              </span>
-              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>{inboundDateDisp}</span>
-            </div>
-            {inboundItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '10px 14px', fontSize: '12px', color: '#c09050', fontWeight: 700 }}>입고 상품이 없습니다.</div>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <tbody>
-                  {inboundItems.map(function (p, i) {
-                    return (
-                      <tr key={i}>
-                        <td style={{ width: '28px', padding: '6px 4px 6px 14px' }}>
-                          <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: '#fef3d8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: '#b86000' }}>{i + 1}</div>
-                        </td>
-                        <td style={{ fontSize: '12px', fontWeight: 800, color: '#3a2000', padding: '6px 14px 6px 4px', borderBottom: i < inboundItems.length - 1 ? '1px solid #f5e8c8' : 'none', lineHeight: 1.35 }}>{p.name}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <InboundCard items={inboundItems} dateDisp={inboundDateDisp} />
         )}
 
         {/* 탭 */}
         {searched && allData.length > 0 && (
           <div style={{ display: 'flex', background: 'white', borderRadius: '12px', padding: '5px', marginBottom: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', gap: '3px' }}>
-            {tabList.map(function (t) {
+            {([
+              { key: 'active' as TabKey, label: '전체상품', count: counts.active, showBadge: true },
+              { key: 'done' as TabKey, label: '픽업완료', count: counts.done, showBadge: true },
+              { key: 'cancel' as TabKey, label: '취소', count: counts.cancel, showBadge: true },
+              { key: 'pickup-time' as TabKey, label: '픽업시간', count: 0, showBadge: false },
+            ]).map(function (t) {
               const isActive = activeTab === t.key;
               return (
                 <button key={t.key} onClick={function () { setActiveTab(t.key); }}
-                  style={{ flex: 1, border: 'none', borderRadius: '9px', padding: '7px 4px', fontSize: '12px', fontWeight: isActive ? 900 : 700, fontFamily: 'inherit', cursor: 'pointer', color: isActive ? 'white' : '#999', backgroundColor: isActive ? '#e67e22' : 'transparent', whiteSpace: 'nowrap' }}>
+                  style={{ flex: 1, border: 'none', borderRadius: '9px', padding: '8px 4px', fontSize: '14px', fontWeight: isActive ? 900 : 700, fontFamily: 'inherit', cursor: 'pointer', color: isActive ? 'white' : '#999', backgroundColor: isActive ? '#e67e22' : 'transparent', whiteSpace: 'nowrap' }}>
                   {t.label}
-                  <span style={{ display: 'inline-block', borderRadius: '8px', padding: '0 5px', fontSize: '10px', fontWeight: 900, marginLeft: '2px', backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)' }}>{t.count}</span>
+                  {t.showBadge && (
+                    <span style={{ display: 'inline-block', borderRadius: '8px', padding: '0 5px', fontSize: '10px', fontWeight: 900, marginLeft: '2px', backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)' }}>{t.count}</span>
+                  )}
                 </button>
               );
             })}
@@ -221,39 +184,25 @@ export default function Home() {
           </div>
         )}
 
+        {/* 픽업시간 탭 */}
+        {!loading && searched && activeTab === 'pickup-time' && (
+          <PickupTimeView items={filtered} />
+        )}
+
         {/* 빈 결과 */}
-        {!loading && searched && filtered.length === 0 && (
+        {!loading && searched && activeTab !== 'pickup-time' && filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px', color: '#aaa', fontSize: '13px' }}>해당 내역이 없습니다.</div>
         )}
 
         {/* 결과 목록 */}
-        {!loading && searched && filtered.length > 0 && (
+        {!loading && searched && activeTab !== 'pickup-time' && filtered.length > 0 && (
           <ResultList filtered={filtered} activeTab={activeTab} />
         )}
 
         {/* 조회 후 입고 상품 카드 */}
         {searched && inboundLoaded && inboundItems.length > 0 && (
-          <div style={{ borderRadius: '12px', overflow: 'hidden', marginTop: '8px', marginBottom: '8px', background: '#fffaf3', border: '1.5px solid #f0d080', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <div style={{ background: '#e67e22', padding: '7px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>
-                <span style={{ color: '#ffe58a' }}>입고 상품 알림</span>
-              </span>
-              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>{inboundDateDisp}</span>
-            </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <tbody>
-                {inboundItems.map(function (p, i) {
-                  return (
-                    <tr key={i}>
-                      <td style={{ width: '28px', padding: '6px 4px 6px 14px' }}>
-                        <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: '#fef3d8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: '#b86000' }}>{i + 1}</div>
-                      </td>
-                      <td style={{ fontSize: '12px', fontWeight: 800, color: '#3a2000', padding: '6px 14px 6px 4px', borderBottom: i < inboundItems.length - 1 ? '1px solid #f5e8c8' : 'none', lineHeight: 1.35 }}>{p.name}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+            <InboundCard items={inboundItems} dateDisp={inboundDateDisp} />
           </div>
         )}
 
@@ -270,7 +219,75 @@ export default function Home() {
         </div>
       </div>
 
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        input::placeholder { color: #bbb; font-size: 13px; }
+      `}</style>
+    </div>
+  );
+}
+
+/* 입고 상품 카드 컴포넌트 */
+function InboundCard({ items, dateDisp }: { items: InboundItem[]; dateDisp: string }) {
+  return (
+    <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', background: '#eaf4ee', border: '1.5px solid #2e5240', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+      <div style={{ background: '#2e5240', padding: '7px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>입고 상품 알림</span>
+        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>{dateDisp}</span>
+      </div>
+      {items.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '10px 14px', fontSize: '12px', color: '#4a7c59', fontWeight: 700 }}>오늘 입고 상품이 없습니다.</div>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <tbody>
+            {items.map(function (p, i) {
+              return (
+                <tr key={i}>
+                  <td style={{ width: '28px', padding: '6px 4px 6px 14px' }}>
+                    <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: '#b2dfc0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: '#2e5240' }}>{i + 1}</div>
+                  </td>
+                  <td style={{ fontSize: '12px', fontWeight: 700, color: '#2e5240', padding: '6px 14px 6px 4px', borderBottom: i < items.length - 1 ? '1px solid #c8e6d0' : 'none', lineHeight: 1.35 }}>{p.name}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+/* 픽업시간 탭 컴포넌트 */
+function PickupTimeView({ items }: { items: OrderItem[] }) {
+  if (items.length === 0) {
+    return <div style={{ textAlign: 'center', padding: '40px', color: '#aaa', fontSize: '13px' }}>진행중인 주문이 없습니다.</div>;
+  }
+  const pickupInfo = [
+    { label: '경기광주점', time: '토요일 오후 2시 ~ 6시', icon: '🕑' },
+    { label: '동탄여울점', time: '토요일 오후 1시 ~ 5시', icon: '🕐' },
+    { label: '영통망포점', time: '토요일 오후 2시 ~ 6시', icon: '🕑' },
+  ];
+  return (
+    <div style={{ background: 'white', borderRadius: '14px', padding: '16px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: '8px' }}>
+      <div style={{ fontSize: '14px', fontWeight: 900, color: '#444', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#e67e22', display: 'inline-block', flexShrink: 0 }}></span>
+        매장별 픽업 가능 시간
+      </div>
+      {pickupInfo.map(function (s, i) {
+        return (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: i < pickupInfo.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+            <span style={{ fontSize: '20px' }}>{s.icon}</span>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: '#2c3e50' }}>{s.label}</div>
+              <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{s.time}</div>
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ marginTop: '12px', fontSize: '11px', color: '#aaa', lineHeight: 1.6 }}>
+        ※ 픽업 마감 후 상품은 다음 픽업일까지 보관됩니다.<br />
+        ※ 입고일로부터 3일 이내 픽업 부탁드립니다.
+      </div>
     </div>
   );
 }
@@ -278,7 +295,7 @@ export default function Home() {
 /* 결과 목록 컴포넌트 */
 function ResultList({ filtered, activeTab }: { filtered: OrderItem[]; activeTab: string }) {
   const sections = buildSections(filtered, activeTab);
-  const groups: { sec: typeof sections[0]; keys: string[]; groupMap: Record<string, OrderItem[]> }[] = [];
+  const groups: { sec: ReturnType<typeof buildSections>[0]; keys: string[]; groupMap: Record<string, OrderItem[]> }[] = [];
 
   sections.forEach(sec => {
     if (sec.items.length === 0) return;
@@ -297,7 +314,7 @@ function ResultList({ filtered, activeTab }: { filtered: OrderItem[]; activeTab:
       {groups.map(function ({ sec, keys, groupMap }, si) {
         return (
           <div key={si}>
-            <div style={{ fontSize: '14px', fontWeight: 900, color: '#444', padding: '4px 6px', marginBottom: '6px', marginTop: si > 0 ? '10px' : '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <div style={{ fontSize: '15px', fontWeight: 900, color: sec.titleColor, padding: '4px 6px', marginBottom: '6px', marginTop: si > 0 ? '10px' : '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: sec.dotColor, flexShrink: 0, display: 'inline-block' }}></span>
               {sec.title} ({keys.length}종)
             </div>
@@ -315,20 +332,20 @@ function ResultList({ filtered, activeTab }: { filtered: OrderItem[]; activeTab:
 
 function buildSections(filtered: OrderItem[], activeTab: string) {
   if (activeTab === 'done') {
-    return [{ title: '픽업 완료 상품', dotColor: '#e67e22', isPickup: false, items: filtered }];
+    return [{ title: '픽업 완료 상품', dotColor: '#e67e22', titleColor: '#444', isPickup: false, items: filtered }];
   }
   if (activeTab === 'cancel') {
-    return [{ title: '취소 상품', dotColor: '#e74c3c', isPickup: false, items: filtered }];
+    return [{ title: '취소 상품', dotColor: '#e74c3c', titleColor: '#444', isPickup: false, items: filtered }];
   }
   const pickupItems = filtered.filter(d => d.canPickup && !d.isCanceled && d.status !== 'O');
   const normalItems = filtered.filter(d => !d.canPickup && !d.isCanceled && d.status !== 'O');
   const doneItems   = filtered.filter(d => !d.isCanceled && d.status === 'O');
   const cancelItems = filtered.filter(d => d.isCanceled);
   return [
-    { title: '픽업 가능 상품',  dotColor: '#27ae60', isPickup: true,  items: pickupItems },
-    { title: '픽업 준비중 상품', dotColor: '#aaa',    isPickup: false, items: normalItems },
-    { title: '픽업 완료 상품',  dotColor: '#e67e22', isPickup: false, items: doneItems   },
-    { title: '취소 상품',       dotColor: '#e74c3c', isPickup: false, items: cancelItems },
+    { title: '픽업 가능 상품',   dotColor: '#27ae60', titleColor: '#1a5c38', isPickup: true,  items: pickupItems },
+    { title: '픽업 준비중 상품', dotColor: '#e67e22', titleColor: '#cf6d17', isPickup: false, items: normalItems },
+    { title: '픽업 완료 상품',   dotColor: '#e67e22', titleColor: '#444',    isPickup: false, items: doneItems   },
+    { title: '취소 상품',        dotColor: '#e74c3c', titleColor: '#444',    isPickup: false, items: cancelItems },
   ];
 }
 
@@ -352,19 +369,21 @@ function ProductGroup({ prodName, items, isPickup }: { prodName: string; items: 
         {items.map(function (item, idx) {
           const si = getStatusInfo(item);
           const dl = getDayLabel(item);
+          const badgeBg = si.color === '#7f8c8d' ? '#f1f2f6' : si.color;
+          const badgeFg = si.color === '#7f8c8d' ? '#636e72' : 'white';
           return (
             <div key={idx} style={{ background: si.bg || 'white', padding: '9px 11px 9px 14px', borderRadius: '10px', marginBottom: '4px', borderLeft: '4px solid ' + (item.isCanceled ? '#e74c3c' : item.status === 'O' ? '#e67e22' : '#dcdde1'), position: 'relative', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               <div style={{ position: 'absolute', top: '9px', right: '10px', textAlign: 'center' }}>
-                <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, backgroundColor: si.color, color: 'white' }}>{si.text}</span>
+                <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, backgroundColor: badgeBg, color: badgeFg }}>{si.text}</span>
                 {item.isCanceled && <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 800, color: '#e74c3c' }}>🗓 {item.cancelDate}</div>}
                 {!item.isCanceled && item.status === 'O' && <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: 800, color: '#e67e22' }}>📦 {item.pickupDate}</div>}
               </div>
-              <div style={{ fontSize: '10px', color: '#bbb', marginBottom: '3px', fontWeight: 700 }}>
+              <div style={{ fontSize: '10px', color: '#bbb', marginBottom: '3px', fontWeight: 400 }}>
                 신청일 <b style={{ color: '#2c3e50' }}>{item.resDate}</b>&nbsp;|&nbsp;입고일 <b style={{ color: '#2c3e50' }}>{item.inDate || '-'}</b>
                 {dl && <span style={{ fontSize: '10px', fontWeight: 900, color: dl.color, backgroundColor: dl.color + '22', padding: '1px 5px', borderRadius: '4px', marginLeft: '4px' }}>{dl.label}</span>}
               </div>
               <div style={{ fontSize: '11px', fontWeight: 900, color: '#aaa', marginBottom: '3px', paddingRight: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.customer}</div>
-              <div style={{ fontSize: '11px', color: '#7f8c8d', lineHeight: 1.6, fontWeight: 700 }}>
+              <div style={{ fontSize: '11px', color: '#7f8c8d', lineHeight: 1.6, fontWeight: 400 }}>
                 수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>&nbsp;|&nbsp;합계: <b style={{ color: '#e67e22' }}>{fmt(item.total)}원</b>
               </div>
               {item.isCanceled && <div style={{ marginTop: '4px', fontSize: '11px', color: '#e74c3c', fontWeight: 800 }}>❌ 취소된 주문입니다.</div>}
