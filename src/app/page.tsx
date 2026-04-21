@@ -160,7 +160,7 @@ export default function Home() {
               { key: 'active' as TabKey, label: '전체상품', count: counts.active, showBadge: true },
               { key: 'done' as TabKey, label: '픽업완료', count: counts.done, showBadge: true },
               { key: 'cancel' as TabKey, label: '취소', count: counts.cancel, showBadge: true },
-              { key: 'pickup-time' as TabKey, label: '픽업시간', count: 0, showBadge: false },
+              { key: 'pickup-time' as TabKey, label: '픽업안내', count: 0, showBadge: false },
             ]).map(function (t) {
               const isActive = activeTab === t.key;
               return (
@@ -257,11 +257,8 @@ function InboundCard({ items, dateDisp }: { items: InboundItem[]; dateDisp: stri
   );
 }
 
-/* 픽업시간 탭 컴포넌트 */
-function PickupTimeView({ items }: { items: OrderItem[] }) {
-  if (items.length === 0) {
-    return <div style={{ textAlign: 'center', padding: '40px', color: '#aaa', fontSize: '13px' }}>진행중인 주문이 없습니다.</div>;
-  }
+/* 픽업안내 탭 컴포넌트 */
+function PickupTimeView({ items: _ }: { items: OrderItem[] }) {
   const pickupInfo = [
     { label: '경기광주점', time: '토요일 오후 2시 ~ 6시', icon: '🕑' },
     { label: '동탄여울점', time: '토요일 오후 1시 ~ 5시', icon: '🕐' },
@@ -275,16 +272,16 @@ function PickupTimeView({ items }: { items: OrderItem[] }) {
       </div>
       {pickupInfo.map(function (s, i) {
         return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: i < pickupInfo.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
             <span style={{ fontSize: '20px' }}>{s.icon}</span>
             <div>
               <div style={{ fontSize: '13px', fontWeight: 800, color: '#2c3e50' }}>{s.label}</div>
-              <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{s.time}</div>
+              <div style={{ fontSize: '12px', color: '#2c3e50', marginTop: '2px' }}>{s.time}</div>
             </div>
           </div>
         );
       })}
-      <div style={{ marginTop: '12px', fontSize: '11px', color: '#aaa', lineHeight: 1.6 }}>
+      <div style={{ marginTop: '12px', fontSize: '11px', color: '#2c3e50', lineHeight: 1.6 }}>
         ※ 픽업 마감 후 상품은 다음 픽업일까지 보관됩니다.<br />
         ※ 입고일로부터 3일 이내 픽업 부탁드립니다.
       </div>
