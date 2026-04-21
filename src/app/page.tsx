@@ -260,9 +260,9 @@ function InboundCard({ items, dateDisp }: { items: InboundItem[]; dateDisp: stri
 /* 픽업안내 탭 컴포넌트 */
 function PickupTimeView({ items: _ }: { items: OrderItem[] }) {
   const pickupInfo = [
-    { label: '경기광주점', time: '토요일 오후 2시 ~ 6시', icon: '🕑' },
-    { label: '동탄여울점', time: '토요일 오후 1시 ~ 5시', icon: '🕐' },
-    { label: '영통망포점', time: '토요일 오후 2시 ~ 6시', icon: '🕑' },
+    { label: '동탄여울점', time: '08:30 ~ 19:30', icon: '🕑' },
+    { label: '영통망포점', time: '08:30 ~ 18:30', icon: '🕐' },
+    { label: '경기광주점', time: '08:30 ~ 18:30', icon: '🕐' },
   ];
   return (
     <div style={{ background: 'white', borderRadius: '14px', padding: '16px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: '8px' }}>
