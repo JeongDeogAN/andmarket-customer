@@ -325,7 +325,7 @@ function PickupTabView({ items, checkedRows, setCheckedRows, submitting, onSubmi
       {/* 픽업 안내 이미지 */}
       <div style={{ borderRadius: '10px', overflow: 'hidden', marginBottom: '8px' }}>
         <img
-          src="/images/Center-banner.png"
+          src="/images/Center-banner.jpg"
           alt="픽업 안내"
           style={{ display: 'block', width: '100%', height: 'auto' }}
         />
