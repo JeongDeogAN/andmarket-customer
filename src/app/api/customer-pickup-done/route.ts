@@ -14,15 +14,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '처리할 항목이 없습니다.' });
     }
 
-    const url = `${GAS_URL}?api=customer-pickup-done`;
-    const res = await fetch(url, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rowIdxList }),
-    });
-
+    const url = `${GAS_URL}?api=customer-pickup-done&rowIdxList=${rowIdxList.join(',')}`;
+    const res = await fetch(url, { redirect: 'follow' });
     const text = await res.text();
+
     const match = text.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/);
     const data = match ? JSON.parse(match[1]) : JSON.parse(text);
 
