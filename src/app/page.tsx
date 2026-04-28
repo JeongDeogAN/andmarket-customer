@@ -427,7 +427,7 @@ function PickupProductGroup({ prodName, items, checked, onToggle }: {
   checked: boolean;
   onToggle: (checked: boolean) => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const totalQty = items.reduce((s, d) => s + Number(d.qty || 0), 0);
   const totalAmt = items.reduce((s, d) => s + Number(d.total || 0), 0);
 
