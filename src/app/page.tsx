@@ -121,7 +121,7 @@ export default function Home() {
   const [toastShow, setToastShow]   = useState(false);
   const [inboundItems, setInboundItems] = useState<InboundItem[]>([]);
   const [inboundLoaded, setInboundLoaded] = useState(false);
-  const [checkedRows, setCheckedRows] = useState<Set<number>>(new Set());
+  const [checkedGroupKeys, setCheckedGroupKeys] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -154,7 +154,7 @@ export default function Home() {
         setAllData(data);
         const hasPickup = data.some(d => !d.isCanceled && d.status !== 'O' && d.canPickup);
         setActiveTab(hasPickup ? 'pickup' : 'ready');
-        setCheckedRows(new Set(data.filter(d => !d.isCanceled && d.status !== 'O' && d.canPickup).map(d => d.rowIdx)));
+        setCheckedGroupKeys(buildAllGroupKeys(data.filter(d => !d.isCanceled && d.status !== 'O' && d.canPickup)));
       } else {
         showToast(json.error || '조회 실패');
         setAllData([]);
@@ -164,7 +164,14 @@ export default function Home() {
   }
 
   async function submitPickupDone() {
-    const rowIdxList = Array.from(checkedRows);
+    const cg = buildCustGroups(pickupItems);
+    const rowIdxList: number[] = [];
+    checkedGroupKeys.forEach(key => {
+      const sep = key.indexOf('\x00');
+      if (sep === -1) return;
+      const cust = key.slice(0, sep), prod = key.slice(sep + 1);
+      cg[cust]?.[prod]?.forEach(d => rowIdxList.push(d.rowIdx));
+    });
     if (rowIdxList.length === 0) { showToast('선택된 항목이 없습니다.'); return; }
     setSubmitting(true);
     try {
@@ -178,14 +185,15 @@ export default function Home() {
         showToast('✅ ' + rowIdxList.length + '건 픽업완료 처리되었습니다.');
         const today    = new Date();
         const todayStr = (today.getMonth() + 1) + '-' + String(today.getDate()).padStart(2, '0');
-        const remainPickup = allData.filter(d => !d.isCanceled && d.status !== 'O' && d.canPickup && !rowIdxList.includes(d.rowIdx)).length;
-        setAllData(prev => prev.map(item =>
+        const newData  = allData.map(item =>
           rowIdxList.includes(item.rowIdx)
             ? { ...item, status: 'O', canPickup: false, pickupDate: todayStr }
             : item
-        ));
-        setCheckedRows(new Set());
-        setActiveTab(remainPickup === 0 ? 'done' : 'pickup');
+        );
+        setAllData(newData);
+        const remainPickup = newData.filter(d => !d.isCanceled && d.status !== 'O' && d.canPickup);
+        setCheckedGroupKeys(buildAllGroupKeys(remainPickup));
+        setActiveTab(remainPickup.length === 0 ? 'done' : 'pickup');
       } else {
         showToast('❌ 저장 중 오류가 발생했습니다.');
       }
@@ -243,8 +251,8 @@ export default function Home() {
             {activeTab === 'pickup' ? (
               <PickupTabView
                 items={pickupItems}
-                checkedRows={checkedRows}
-                setCheckedRows={setCheckedRows}
+                checkedGroupKeys={checkedGroupKeys}
+                setCheckedGroupKeys={setCheckedGroupKeys}
                 submitting={submitting}
                 onSubmit={submitPickupDone}
               />
@@ -287,11 +295,27 @@ export default function Home() {
   );
 }
 
+// ── 헬퍼: 고객+상품 그룹 빌더 ───────────────────────────────
+function buildCustGroups(items: OrderItem[]): Record<string, Record<string, OrderItem[]>> {
+  const g: Record<string, Record<string, OrderItem[]>> = {};
+  items.forEach(d => {
+    if (!g[d.customer]) g[d.customer] = {};
+    if (!g[d.customer][d.prodName]) g[d.customer][d.prodName] = [];
+    g[d.customer][d.prodName].push(d);
+  });
+  return g;
+}
+
+function buildAllGroupKeys(items: OrderItem[]): Set<string> {
+  const cg = buildCustGroups(items);
+  return new Set(Object.keys(cg).flatMap(c => Object.keys(cg[c]).map(p => c + '\x00' + p)));
+}
+
 // ── 픽업대기 탭 ───────────────────────────────────────────────
-function PickupTabView({ items, checkedRows, setCheckedRows, submitting, onSubmit }: {
+function PickupTabView({ items, checkedGroupKeys, setCheckedGroupKeys, submitting, onSubmit }: {
   items: OrderItem[];
-  checkedRows: Set<number>;
-  setCheckedRows: (s: Set<number>) => void;
+  checkedGroupKeys: Set<string>;
+  setCheckedGroupKeys: (s: Set<string>) => void;
   submitting: boolean;
   onSubmit: () => void;
 }) {
@@ -299,36 +323,39 @@ function PickupTabView({ items, checkedRows, setCheckedRows, submitting, onSubmi
     return <div style={{ textAlign: 'center', padding: '40px', color: '#aaa', fontSize: '13px' }}>픽업대기 상품이 없습니다.</div>;
   }
 
-  const checkedCount  = checkedRows.size;
-  const allChecked    = checkedCount === items.length;
-  const indeterminate = checkedCount > 0 && checkedCount < items.length;
+  const custGroups = buildCustGroups(items);
+  const custKeys   = Object.keys(custGroups).sort();
+  const allGroupKeys = custKeys.flatMap(c => Object.keys(custGroups[c]).map(p => c + '\x00' + p));
+  const totalProdCount = allGroupKeys.length;
+
+  const checkedCount     = allGroupKeys.filter(k => checkedGroupKeys.has(k)).length;
+  const checkedOrderCount = allGroupKeys
+    .filter(k => checkedGroupKeys.has(k))
+    .reduce((s, k) => {
+      const sep = k.indexOf('\x00');
+      const c = k.slice(0, sep), p = k.slice(sep + 1);
+      return s + (custGroups[c]?.[p]?.length || 0);
+    }, 0);
+  const allChecked    = checkedCount === totalProdCount && totalProdCount > 0;
+  const indeterminate = checkedCount > 0 && checkedCount < totalProdCount;
 
   function toggleAll(checked: boolean) {
-    setCheckedRows(checked ? new Set(items.map(d => d.rowIdx)) : new Set());
+    setCheckedGroupKeys(checked ? new Set(allGroupKeys) : new Set());
   }
 
-  function toggleRow(rowIdx: number, checked: boolean) {
-    const next = new Set(checkedRows);
-    if (checked) next.add(rowIdx); else next.delete(rowIdx);
-    setCheckedRows(next);
+  function toggleGroup(key: string, checked: boolean) {
+    const next = new Set(checkedGroupKeys);
+    if (checked) next.add(key); else next.delete(key);
+    setCheckedGroupKeys(next);
   }
 
-  const groups: Record<string, OrderItem[]> = {};
-  items.forEach(item => {
-    if (!groups[item.prodName]) groups[item.prodName] = [];
-    groups[item.prodName].push(item);
-  });
-  const keys = Object.keys(groups).sort((a, b) => (groups[b][0].resDate || '').localeCompare(groups[a][0].resDate || ''));
+  const disabled = checkedOrderCount === 0 || submitting;
 
   return (
     <div>
       {/* 픽업 안내 이미지 */}
       <div style={{ borderRadius: '10px', overflow: 'hidden', marginBottom: '8px' }}>
-        <img
-          src="/images/Center-banner.jpg"
-          alt="픽업 안내"
-          style={{ display: 'block', width: '100%', height: 'auto' }}
-        />
+        <img src="/images/Center-banner.jpg" alt="픽업 안내" style={{ display: 'block', width: '100%', height: 'auto' }} />
       </div>
 
       {/* 액션 바 */}
@@ -338,58 +365,67 @@ function PickupTabView({ items, checkedRows, setCheckedRows, submitting, onSubmi
             checked={allChecked}
             indeterminate={indeterminate}
             onChange={toggleAll}
-            style={{ width: '18px', height: '18px', accentColor: '#27ae60', cursor: 'pointer', flexShrink: 0, margin: 0 }}
+            style={{ width: '15px', height: '15px', accentColor: '#27ae60', cursor: 'pointer', flexShrink: 0, margin: 0 }}
           />
-          <span style={{ fontSize: '13px', fontWeight: 800, color: '#1a5c38' }}>
-            전체선택 (<span>{checkedCount}</span>건)
+          <span style={{ fontSize: '15px', fontWeight: 800, color: '#1a5c38' }}>
+            전체선택 (<span>{checkedOrderCount}</span>건)
           </span>
         </div>
-        <PickupDoneButton count={checkedCount} submitting={submitting} onSubmit={onSubmit} />
+        <button
+          disabled={disabled}
+          onClick={onSubmit}
+          style={{
+            background: disabled ? '#ccc' : '#fa7703',
+            color: 'white', border: 'none', borderRadius: '9px',
+            padding: '8px 14px', fontSize: '13px', fontWeight: 900, fontFamily: 'inherit',
+            cursor: disabled ? 'default' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+            opacity: disabled ? 0.6 : 1, transition: 'opacity 0.1s',
+          }}>
+          {submitting ? '처리 중...' : '픽업완료 저장'}
+        </button>
       </div>
 
       {/* 섹션 타이틀 */}
       <div style={{ fontSize: '15px', fontWeight: 900, color: '#444', padding: '4px 6px', marginBottom: '6px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#27ae60', display: 'inline-block', flexShrink: 0 }} />
-        픽업대기 상품 ({keys.length}종)
+        픽업대기 상품 ({totalProdCount}건)
       </div>
 
-      {/* 상품 그룹 */}
-      {keys.map(prodName => (
-        <PickupProductGroup key={prodName} prodName={prodName} items={groups[prodName]} checkedRows={checkedRows} onToggle={toggleRow} />
-      ))}
+      {/* 고객별 그룹 */}
+      {custKeys.map(custName => {
+        const prodGroups = custGroups[custName];
+        const prodKeys   = Object.keys(prodGroups).sort();
+        const custTotalAmt = prodKeys.reduce((s, p) => s + prodGroups[p].reduce((s2, d) => s2 + Number(d.total || 0), 0), 0);
+        return (
+          <div key={custName}>
+            <div style={{ margin: '8px 0 4px', padding: '5px 10px', background: '#d5f0e0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '13px', fontWeight: 900, color: '#1a5c38' }}>👤 {custName}</span>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#27ae60' }}>{custTotalAmt.toLocaleString()}원</span>
+            </div>
+            {prodKeys.map(prodName => {
+              const groupKey = custName + '\x00' + prodName;
+              return (
+                <PickupProductGroup
+                  key={groupKey}
+                  prodName={prodName}
+                  items={prodGroups[prodName]}
+                  checked={checkedGroupKeys.has(groupKey)}
+                  onToggle={c => toggleGroup(groupKey, c)}
+                />
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function PickupDoneButton({ count, submitting, onSubmit }: { count: number; submitting: boolean; onSubmit: () => void }) {
-  const [pressed, setPressed] = useState(false);
-  const disabled = count === 0 || submitting;
-  return (
-    <button
-      disabled={disabled}
-      onClick={onSubmit}
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
-      onTouchStart={() => setPressed(true)}
-      onTouchEnd={() => setPressed(false)}
-      style={{
-        background: disabled ? '#ccc' : 'linear-gradient(180deg,#f05a4a 0%,#c0392b 100%)',
-        color: 'white', border: 'none', borderRadius: '9px',
-        padding: '7px 14px 9px', fontSize: '13px', fontWeight: 900, fontFamily: 'inherit',
-        cursor: disabled ? 'default' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-        boxShadow: disabled ? '0 2px 0 #aaa' : pressed ? '0 1px 0 #922b21,0 2px 4px rgba(192,57,43,0.3)' : '0 4px 0 #922b21,0 6px 8px rgba(192,57,43,0.35)',
-        position: 'relative', top: pressed && !disabled ? '3px' : '0', transition: 'all 0.1s',
-      }}>
-      {submitting ? '처리 중...' : `✓ ${count}건 픽업완료 저장`}
-    </button>
-  );
-}
-
-function PickupProductGroup({ prodName, items, checkedRows, onToggle }: {
+function PickupProductGroup({ prodName, items, checked, onToggle }: {
   prodName: string;
   items: OrderItem[];
-  checkedRows: Set<number>;
-  onToggle: (rowIdx: number, checked: boolean) => void;
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
 }) {
   const [open, setOpen] = useState(true);
   const totalQty = items.reduce((s, d) => s + Number(d.qty || 0), 0);
@@ -399,27 +435,26 @@ function PickupProductGroup({ prodName, items, checkedRows, onToggle }: {
     <div style={{ marginBottom: '6px' }}>
       <div onClick={() => setOpen(!open)}
         style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#eafaf1', borderRadius: '12px', padding: '9px 12px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', borderLeft: '4px solid #27ae60', userSelect: 'none' }}>
+        <input type="checkbox" checked={checked}
+          onChange={e => { e.stopPropagation(); onToggle(e.target.checked); }}
+          onClick={e => e.stopPropagation()}
+          style={{ width: '13px', height: '13px', accentColor: '#27ae60', cursor: 'pointer', flexShrink: 0, margin: 0 }} />
         <span style={{ flex: 1, fontSize: '13px', fontWeight: 900, color: '#1a5c38' }}>{prodName}</span>
-        <span style={{ fontSize: '11px', color: '#27ae60', fontWeight: 700, whiteSpace: 'nowrap' }}>{items.length}건 · {totalQty}개 · {totalAmt.toLocaleString()}원</span>
+        <span style={{ fontSize: '11px', color: '#27ae60', fontWeight: 700, whiteSpace: 'nowrap' }}>{totalQty}개 · {totalAmt.toLocaleString()}원</span>
         <span style={{ fontSize: '11px', color: '#27ae60', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>▼</span>
       </div>
       <div style={{ display: open ? 'block' : 'none', background: '#f4fdf7', borderRadius: '0 0 10px 10px', padding: open ? '4px 4px 2px' : '0' }}>
         {items.map((item, idx) => (
-          <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-            <input type="checkbox" checked={checkedRows.has(item.rowIdx)} onChange={e => onToggle(item.rowIdx, e.target.checked)}
-              style={{ width: '20px', height: '20px', accentColor: '#27ae60', cursor: 'pointer', flexShrink: 0, marginTop: '10px' }} />
-            <div style={{ flex: 1, background: 'white', padding: '9px 11px 9px 14px', borderRadius: '10px', borderLeft: '4px solid #dcdde1', position: 'relative', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <div style={{ position: 'absolute', top: '9px', right: '10px' }}>
-                <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, background: '#f1f2f6', color: '#636e72' }}>대기중</span>
-              </div>
-              <div style={{ fontSize: '10px', color: '#bbb', marginBottom: '3px', fontWeight: 400 }}>
-                신청일 <b style={{ color: '#2c3e50' }}>{item.resDate}</b>&nbsp;|&nbsp;입고일 <b style={{ color: '#2c3e50' }}>{item.inDate || '-'}</b>
-                <span style={{ fontSize: '10px', fontWeight: 900, color: '#27ae60', background: '#27ae6022', padding: '1px 5px', borderRadius: '4px', marginLeft: '4px' }}>픽업가능</span>
-              </div>
-              <div style={{ fontSize: '11px', fontWeight: 900, color: '#aaa', marginBottom: '3px', paddingRight: '70px' }}>{item.customer}</div>
-              <div style={{ fontSize: '11px', color: '#7f8c8d', lineHeight: 1.6, fontWeight: 400 }}>
-                수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>&nbsp;|&nbsp;합계: <b style={{ color: '#fa7703' }}>{fmt(item.total)}원</b>
-              </div>
+          <div key={idx} style={{ background: 'white', padding: '9px 11px 9px 14px', borderRadius: '10px', marginBottom: '4px', borderLeft: '4px solid #dcdde1', position: 'relative', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div style={{ position: 'absolute', top: '9px', right: '10px' }}>
+              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, background: '#f1f2f6', color: '#636e72' }}>대기중</span>
+            </div>
+            <div style={{ fontSize: '10px', color: '#bbb', marginBottom: '3px', fontWeight: 400 }}>
+              신청일 <b style={{ color: '#2c3e50' }}>{item.resDate}</b>&nbsp;|&nbsp;입고일 <b style={{ color: '#2c3e50' }}>{item.inDate || '-'}</b>
+              <span style={{ fontSize: '10px', fontWeight: 900, color: '#27ae60', background: '#27ae6022', padding: '1px 5px', borderRadius: '4px', marginLeft: '4px' }}>픽업가능</span>
+            </div>
+            <div style={{ fontSize: '11px', color: '#7f8c8d', lineHeight: 1.6, fontWeight: 400 }}>
+              수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>&nbsp;|&nbsp;합계: <b style={{ color: '#fa7703' }}>{fmt(item.total)}원</b>
             </div>
           </div>
         ))}
