@@ -466,37 +466,51 @@ function PickupProductGroup({ prodName, items, checked, onToggle }: {
   );
 }
 
-// ── 일반 탭 (입고준비중 / 픽업완료) ──────────────────────────
+// ── 일반 탭 (입고대기 / 픽업완료) ────────────────────────────
 function NormalTabView({ items, activeTab }: { items: OrderItem[]; activeTab: TabKey }) {
-  const isDone      = activeTab === 'done';
-  const title       = isDone ? '픽업 완료 상품' : '입고 준비중 상품';
-  const dotColor    = isDone ? '#fa7703' : '#e67e22';
+  const isDone   = activeTab === 'done';
+  const title    = isDone ? '픽업 완료 상품' : '입고 준비중 상품';
+  const dotColor = isDone ? '#fa7703' : '#e67e22';
 
   if (items.length === 0) {
     return <div style={{ textAlign: 'center', padding: '40px', color: '#aaa', fontSize: '13px' }}>해당 내역이 없습니다.</div>;
   }
 
-  const groups: Record<string, OrderItem[]> = {};
-  items.forEach(item => {
-    if (!groups[item.prodName]) groups[item.prodName] = [];
-    groups[item.prodName].push(item);
-  });
-  const keys = Object.keys(groups).sort((a, b) => {
-    if (isDone) return (groups[b][0].pickupDate || '').localeCompare(groups[a][0].pickupDate || '');
-    return (groups[b][0].resDate || '').localeCompare(groups[a][0].resDate || '');
-  });
+  const custGroups     = buildCustGroups(items);
+  const custKeys       = Object.keys(custGroups).sort();
+  const totalProdCount = custKeys.reduce((s, c) => s + Object.keys(custGroups[c]).length, 0);
+
+  const headerBg    = isDone ? '#fde8d8' : '#fef3e2';
+  const headerColor = isDone ? '#7a3800' : '#7a5500';
+  const amtColor    = isDone ? '#fa7703' : '#e67e22';
 
   return (
     <div>
       <div style={{ fontSize: '15px', fontWeight: 900, color: '#444', padding: '4px 6px', marginBottom: '6px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
-        {title} ({keys.length}종)
+        {title} ({totalProdCount}종)
       </div>
-      {keys.map(prodName => {
-        const grpItems = isDone
-          ? [...groups[prodName]].sort((a, b) => (b.pickupDate || '').localeCompare(a.pickupDate || ''))
-          : groups[prodName];
-        return <NormalProductGroup key={prodName} prodName={prodName} items={grpItems} isDone={isDone} />;
+      {custKeys.map(custName => {
+        const prodGroups   = custGroups[custName];
+        const prodKeys     = Object.keys(prodGroups).sort();
+        const custTotalAmt = prodKeys.reduce((s, p) =>
+          s + prodGroups[p].reduce((s2, d) => s2 + Number(d.total || 0), 0), 0);
+        return (
+          <div key={custName}>
+            <div style={{ margin: '8px 0 4px', padding: '5px 10px', background: headerBg, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '13px', fontWeight: 900, color: headerColor }}>👤 {custName}</span>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: amtColor }}>{custTotalAmt.toLocaleString()}원</span>
+            </div>
+            {prodKeys.map(prodName => {
+              const grpItems = isDone
+                ? [...prodGroups[prodName]].sort((a, b) => (b.pickupDate || '').localeCompare(a.pickupDate || ''))
+                : prodGroups[prodName];
+              return (
+                <NormalProductGroup key={custName + '\x00' + prodName} prodName={prodName} items={grpItems} isDone={isDone} />
+              );
+            })}
+          </div>
+        );
       })}
     </div>
   );
@@ -528,7 +542,6 @@ function NormalProductGroup({ prodName, items, isDone }: { prodName: string; ite
               신청일 <b style={{ color: '#2c3e50' }}>{item.resDate}</b>&nbsp;|&nbsp;입고일 <b style={{ color: '#2c3e50' }}>{item.inDate || '-'}</b>
               {!isDone && <span style={{ fontSize: '10px', fontWeight: 900, color: '#e67e22', background: '#e67e2222', padding: '1px 5px', borderRadius: '4px', marginLeft: '4px' }}>준비중</span>}
             </div>
-            <div style={{ fontSize: '11px', fontWeight: 900, color: '#aaa', marginBottom: '3px', paddingRight: '70px' }}>{item.customer}</div>
             <div style={{ fontSize: '11px', color: '#7f8c8d', lineHeight: 1.6, fontWeight: 400 }}>
               수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>&nbsp;|&nbsp;합계: <b style={{ color: '#fa7703' }}>{fmt(item.total)}원</b>
             </div>
