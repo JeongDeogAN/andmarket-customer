@@ -388,14 +388,17 @@ function PickupTabView({ items, checkedGroupKeys, setCheckedGroupKeys, submittin
       {/* 섹션 타이틀 */}
       <div style={{ fontSize: '15px', fontWeight: 900, color: '#444', padding: '4px 6px', marginBottom: '6px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#27ae60', display: 'inline-block', flexShrink: 0 }} />
-        픽업대기 상품 ({totalProdCount}건)
+        픽업대기 상품 ({checkedCount}건)
       </div>
 
       {/* 고객별 그룹 */}
       {custKeys.map(custName => {
         const prodGroups = custGroups[custName];
         const prodKeys   = Object.keys(prodGroups).sort();
-        const custTotalAmt = prodKeys.reduce((s, p) => s + prodGroups[p].reduce((s2, d) => s2 + Number(d.total || 0), 0), 0);
+        const custTotalAmt = prodKeys.reduce((s, p) => {
+          if (!checkedGroupKeys.has(custName + '\x00' + p)) return s;
+          return s + prodGroups[p].reduce((s2, d) => s2 + Number(d.total || 0), 0);
+        }, 0);
         return (
           <div key={custName}>
             <div style={{ margin: '8px 0 4px', padding: '5px 10px', background: '#d5f0e0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
