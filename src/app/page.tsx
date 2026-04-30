@@ -488,7 +488,7 @@ function NormalTabView({ items, activeTab }: { items: OrderItem[]; activeTab: Ta
     <div>
       <div style={{ fontSize: '15px', fontWeight: 900, color: '#444', padding: '4px 6px', marginBottom: '6px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
-        {title} ({totalProdCount}종)
+        {title} ({totalProdCount}건)
       </div>
       {custKeys.map(custName => {
         const prodGroups   = custGroups[custName];
@@ -526,7 +526,7 @@ function NormalProductGroup({ prodName, items, isDone }: { prodName: string; ite
       <div onClick={() => setOpen(!open)}
         style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'white', borderRadius: '12px', padding: '9px 12px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', borderLeft: '4px solid #fa7703', userSelect: 'none' }}>
         <span style={{ flex: 1, fontSize: '13px', fontWeight: 900, color: '#2c3e50' }}>{prodName}</span>
-        <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 700, whiteSpace: 'nowrap' }}>{items.length}건 · {totalQty}개 · {totalAmt.toLocaleString()}원</span>
+        <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 700, whiteSpace: 'nowrap' }}>{totalQty}개 · {totalAmt.toLocaleString()}원</span>
         <span style={{ fontSize: '11px', color: '#e74c3c', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>▼</span>
       </div>
       <div style={{ display: open ? 'block' : 'none', padding: '4px 0 0 0' }}>
@@ -543,7 +543,7 @@ function NormalProductGroup({ prodName, items, isDone }: { prodName: string; ite
               {!isDone && <span style={{ fontSize: '10px', fontWeight: 900, color: '#e67e22', background: '#e67e2222', padding: '1px 5px', borderRadius: '4px', marginLeft: '4px' }}>준비중</span>}
             </div>
             <div style={{ fontSize: '11px', color: '#7f8c8d', lineHeight: 1.6, fontWeight: 400 }}>
-              수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>&nbsp;|&nbsp;합계: <b style={{ color: '#fa7703' }}>{fmt(item.total)}원</b>
+              수량: <b>{item.qty}개</b>&nbsp;|&nbsp;판매가: <b>{fmt(item.price)}원</b>
             </div>
           </div>
         ))}
