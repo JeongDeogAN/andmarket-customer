@@ -558,7 +558,7 @@ function InboundCard({ items }: { items: InboundItem[] }) {
     <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', background: '#fff4e6', border: '1.5px solid #fa7703', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
       <div style={{ background: '#d96800', padding: '7px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>입고 상품 알림</span>
-        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>입고일</span>
+        <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>입고일</span>
       </div>
       {items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '10px 14px', fontSize: '12px', color: '#c07020', fontWeight: 700 }}>최근 1주일 입고 상품이 없습니다.</div>
@@ -570,10 +570,10 @@ function InboundCard({ items }: { items: InboundItem[] }) {
               return (
                 <tr key={i}>
                   <td style={{ width: '28px', padding: '6px 4px 6px 14px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: '#fdd9aa', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: '#7a3800' }}>{i + 1}</div>
+                    <div style={{ width: '22px', height: '22px', borderRadius: '5px', background: '#fdd9aa', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 900, color: '#7a3800' }}>{i + 1}</div>
                   </td>
-                  <td style={{ fontSize: '12px', fontWeight: 700, color: '#7a3800', padding: '6px 4px', borderBottom: i < items.length - 1 ? '1px solid #fdd9aa' : 'none', lineHeight: 1.35 }}>{p.name}</td>
-                  <td style={{ textAlign: 'right', color: '#d96800', fontWeight: 700, fontSize: '12px', whiteSpace: 'nowrap', padding: '6px 14px 6px 4px', borderBottom: i < items.length - 1 ? '1px solid #fdd9aa' : 'none' }}>{inDateDisp}</td>
+                  <td style={{ fontSize: '14px', fontWeight: 700, color: '#7a3800', padding: '6px 4px', borderBottom: i < items.length - 1 ? '1px solid #fdd9aa' : 'none', lineHeight: 1.35 }}>{p.name}</td>
+                  <td style={{ textAlign: 'right', color: '#d96800', fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap', padding: '6px 14px 6px 4px', borderBottom: i < items.length - 1 ? '1px solid #fdd9aa' : 'none' }}>{inDateDisp}</td>
                 </tr>
               );
             })}
