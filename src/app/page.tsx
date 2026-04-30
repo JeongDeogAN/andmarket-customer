@@ -50,7 +50,7 @@ function IndeterminateCheckbox({ checked, indeterminate, onChange, style }: {
 function HeaderBanner() {
   return (
     <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-      <img src="/images/Top-banner.png" alt="앤드마켓 배너" style={{ display: 'block', width: '100%', height: 'auto' }} />
+      <img src="/images/Top-banner.jpg" alt="앤드마켓 배너" style={{ display: 'block', width: '100%', height: 'auto' }} />
     </div>
   );
 }
