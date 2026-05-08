@@ -184,7 +184,7 @@ export default function Home() {
       if (json.success) {
         showToast('✅ ' + rowIdxList.length + '건 픽업완료 처리되었습니다.');
         const today    = new Date();
-        const todayStr = (today.getMonth() + 1) + '-' + String(today.getDate()).padStart(2, '0');
+        const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
         const newData  = allData.map(item =>
           rowIdxList.includes(item.rowIdx)
             ? { ...item, status: 'O', canPickup: false, pickupDate: todayStr }
