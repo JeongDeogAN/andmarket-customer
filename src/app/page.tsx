@@ -63,7 +63,7 @@ function StepBar({ activeTab, counts, onSwitch }: {
 }) {
   const steps: { key: TabKey; label: string }[] = [
     { key: 'ready',  label: '입고대기' },
-    { key: 'pickup', label: '픽업대기' },
+    { key: 'pickup', label: '입고완료' },
     { key: 'done',   label: '픽업완료' },
   ];
   const order: TabKey[] = ['ready', 'pickup', 'done'];
@@ -154,7 +154,7 @@ export default function Home() {
         setAllData(data);
         const hasPickup = data.some(d => !d.isCanceled && d.status !== 'O' && d.canPickup);
         setActiveTab(hasPickup ? 'pickup' : 'ready');
-        setCheckedGroupKeys(buildAllGroupKeys(data.filter(d => !d.isCanceled && d.status !== 'O' && d.canPickup)));
+        setCheckedGroupKeys(new Set());
       } else {
         showToast(json.error || '조회 실패');
         setAllData([]);
@@ -192,7 +192,7 @@ export default function Home() {
         );
         setAllData(newData);
         const remainPickup = newData.filter(d => !d.isCanceled && d.status !== 'O' && d.canPickup);
-        setCheckedGroupKeys(buildAllGroupKeys(remainPickup));
+        setCheckedGroupKeys(new Set());
         setActiveTab(remainPickup.length === 0 ? 'done' : 'pickup');
       } else {
         showToast('❌ 저장 중 오류가 발생했습니다.');
@@ -320,7 +320,7 @@ function PickupTabView({ items, checkedGroupKeys, setCheckedGroupKeys, submittin
   onSubmit: () => void;
 }) {
   if (items.length === 0) {
-    return <div style={{ textAlign: 'center', padding: '40px', color: '#aaa', fontSize: '13px' }}>픽업대기 상품이 없습니다.</div>;
+    return <div style={{ textAlign: 'center', padding: '40px', color: '#aaa', fontSize: '13px' }}>입고완료 상품이 없습니다.</div>;
   }
 
   const custGroups = buildCustGroups(items);
@@ -388,7 +388,7 @@ function PickupTabView({ items, checkedGroupKeys, setCheckedGroupKeys, submittin
       {/* 섹션 타이틀 */}
       <div style={{ fontSize: '15px', fontWeight: 900, color: '#444', padding: '4px 6px', marginBottom: '6px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#27ae60', display: 'inline-block', flexShrink: 0 }} />
-        픽업대기 상품 ({checkedCount}건)
+        입고완료 상품 ({checkedCount}건)
       </div>
 
       {/* 고객별 그룹 */}
